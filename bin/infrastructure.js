@@ -1,11 +1,7 @@
 'use strict';
 
-const PD = require("probability-distributions");
-const chi = require('chi-squared');
-const rl_cdf = require( 'distributions-rayleigh-cdf' );
-const exp = require( 'distributions-exponential' )();
-
 const utils = require('./utils.js');
+const Event = require('./event.js');
 
 class Parking{
 	constructor(num, conf_reader){
@@ -17,6 +13,10 @@ class Parking{
 		this.num_spaces = utils.getRandomInt(min_spaces, max_spaces);
 
 		this.occupied_spaces = 0;
+
+		this.events = new Array();
+		for(var i = utils.getRandomInt((conf_reader.val("events:min_events") || 0), (conf_reader.val("events:max_events") || 10)); i > 0; i--)
+			this.events.push(new Event(conf_reader));
 	}
 
 	get name(){
@@ -32,26 +32,20 @@ class Parking{
 	}
 
 	takeStep(x){
-		/*var shifted_x = (x + 11) % 24;
-		var shifted_end_x = (shifted_x + 22) % 24;
+		let rate = 0;
 		
-		console.log("New Rate", x, shifted_x, shifted_end_x);
-
-		var rate = exp.pdf([shifted_end_x])[0];
-		console.log(exp.pdf([shifted_end_x])[0]);
-
-		rate -= rl_cdf(shifted_x);
-		console.log(rl_cdf(shifted_x));
+		for(var i = 0; i < this.events.length; i++)
+			rate += this.events[i].takeStep(x);
 
 
-		this.occupied_spaces = Math.round(rate  * this.num_spaces) * 1;
-		console.log(this.free_spaces);*/
+		rate = rate > 1 ? 1 : rate;
+		this.occupied_spaces = Math.round(rate  * this.num_spaces);
 	}
 }
 
 class City{
 	constructor(num, conf_reader){
-		this.parkings = [];
+		this.parkings = new Array();
 		this.num = num;
 
 		let min_parks = conf_reader.val("parkings:min_num_per_city") || 1;
