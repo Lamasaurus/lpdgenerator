@@ -2,9 +2,11 @@
 Linked parking data generator, generates dumps of parking data in the form of linked data.
 
 ## Usage
-node ./bin/generator.js <input-file>
+node ./bin/generator.js \[input-file\]
 
 ## Input
+There is an example input file in the root.
+
 Name | Description | Default
 --- | --- | ---
 cities:number | The number of generated cities | 1
