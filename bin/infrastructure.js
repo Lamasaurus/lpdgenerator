@@ -55,7 +55,7 @@ class City{
 		this.num = num;
 
 		let min_parks = conf_reader.val("parkings:min_num_per_city") || 1;
-		let max_parks = conf_reader.val("parkings:max_num_per_city") || 2;
+		let max_parks = conf_reader.val("parkings:max_num_per_city") || 1;
 		this.num_parkings = utils.getRandomInt(min_parks, max_parks);
 
 		for(var i = 0; i < this.num_parkings; i++){
