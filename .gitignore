@@ -1,3 +1,9 @@
+# Webstorm
+.idea/*
+
+# Output directory
+output/*
+
 # Logs
 logs
 *.log
