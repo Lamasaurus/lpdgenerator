@@ -21,3 +21,4 @@ time:interval | The interval at which the parkings get updated | 30
 file:output | The output directory | ""
 file:output_meta_data | Bool to see if meta data should be put in the file | false
 file:extension | Defines the extension of the generated files | ""
+file:name_format | Defines the format of the output filenames. `DEFAULT`: `city-YYYY-MM-DDThhmmss`, `UNIX`: UNIX timestamp of beginning of interval. | "DEFAULT"
