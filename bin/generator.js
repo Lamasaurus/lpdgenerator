@@ -111,9 +111,23 @@ class Generator{
 
 	//Requests the result of the N3 write and writes it to a file
 	outputFile(result, city){
-		var file_name = this.output_dir + "\\" + city.name + "-" + utils.createTimeString(this.current_file_time).replace(new RegExp(":", 'g'), "");
+		let delim = "\\";
+		if (process.platform === 'linux') {
+			delim = "/";
+		}
 
-		if(this.file_extension)
+		let file_name = this.output_dir + delim;
+        let format = conf_reader.val("file:name_format") || "DEFAULT";
+        switch (format) {
+			case "DEFAULT": // Default file naming
+                file_name += city.name + "-" + utils.createTimeString(this.current_file_time).replace(new RegExp(":", 'g'), "");
+                break;
+			case "UNIX": // File name is UNIX timestamp of beginning of interval
+				file_name += this.current_file_time.valueOf()/1000;
+
+		}
+
+		if (this.file_extension)
 			file_name += this.file_extension;
 
 		fs.writeFile(file_name, result, (err) => {
