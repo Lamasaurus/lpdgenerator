@@ -1,0 +1,28 @@
+{
+  "name": "lpdgenerator",
+  "version": "1.0.0",
+  "description": "Linked parking data generator, generates dumps of parking data in the form of linked data.",
+  "main": "index.js",
+  "bin": {
+    "lpdgenerator": "event.js"
+  },
+  "dependencies": {
+    "distributions-exponential": "^2.0.1",
+    "distributions-rayleigh-cdf": "0.0.1",
+    "n3": "^0.11.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lamasaurus/lpdgenerator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lamasaurus/lpdgenerator/issues"
+  },
+  "homepage": "https://github.com/Lamasaurus/lpdgenerator#readme"
+}

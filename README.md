@@ -22,3 +22,9 @@ file:output | The output directory | ""
 file:output_meta_data | Bool to see if meta data should be put in the file | false
 file:extension | Defines the extension of the generated files | ""
 file:name_format | Defines the format of the output filenames. `DEFAULT`: `city-YYYY-MM-DDThhmmss`, `UNIX`: UNIX timestamp of beginning of interval. | "DEFAULT"
+events:min_events | Minimum number of events within 24h | 0
+events:max_events | Maximum number of events within 24h | 1
+events:min_duration | Minimum duration of the events | 0
+events:max_duration | Maximum duration of the events | 1
+events:min_occupation | Minimum occupation of an event | 0
+events:max_occupation | Maximum occupation of an event | 1
