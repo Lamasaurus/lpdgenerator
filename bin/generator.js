@@ -4,6 +4,7 @@ const N3 = require('n3');
 const N3Util = N3.Util;
 
 const fs = require('fs');
+const mkdirp = require('mkdirp');
 
 const http = require('http');
 const url = require('url') ;
@@ -117,14 +118,15 @@ class Generator{
 		}
 
 		let file_name = this.output_dir + delim;
+		let subdir = '';
         let format = conf_reader.val("file:name_format") || "DEFAULT";
         switch (format) {
 			case "DEFAULT": // Default file naming
                 file_name += city.name + "-" + utils.createTimeString(this.current_file_time).replace(new RegExp(":", 'g'), "");
                 break;
 			case "UNIX": // File name is UNIX timestamp of beginning of interval
-				file_name += this.current_file_time.valueOf()/1000;
-
+				file_name += city.name + delim + this.current_file_time.valueOf()/1000;
+				subdir = this.output_dir + delim + city.name;
 		}
 
 		if (this.file_extension)
@@ -132,7 +134,20 @@ class Generator{
 
 		fs.writeFile(file_name, result, (err) => {
 		    if(err) {
-		        return console.log(err);
+		    	if (err.errno === -2 && subdir !== '') {
+		    		// Directory might not exist, try to create it
+					mkdirp(subdir, (err) => {
+						if (err) console.error(err);
+						else {
+							console.log("Created directory ", subdir);
+							fs.writeFile(file_name, result, err => {
+								if (err) return console.error(err);
+							})
+                        }
+					})
+				} else {
+                    return console.error(err);
+                }
 		    }
 
 		    console.log(file_name + " was saved!");
