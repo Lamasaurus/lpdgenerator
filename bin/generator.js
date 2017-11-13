@@ -3,31 +3,13 @@
 const N3 = require('n3');
 const N3Util = N3.Util;
 
-const fs = require('fs');
-const mkdirp = require('mkdirp');
-
-const http = require('http');
-const url = require('url') ;
-
 const infrastructure = require('./infrastructure.js');
 const utils = require('./utils.js');
 
-class ConfigReader{
-	constructor(){
-		this.config_file = process.argv.length < 3 ? {} : JSON.parse(fs.readFileSync(process.argv[2]));
-	}
-
-	val(val_name){
-		return this.config_file[val_name];
-	}
-}
-
-const conf_reader = new ConfigReader();
-
-
+const conf_reader = require('./configreader');
 
 class Generator{
-	constructor(){
+	constructor(split_files = true){
 		this.num_cities = conf_reader.val("cities:number") || 1;
 
 		this.cities = [];
@@ -38,21 +20,44 @@ class Generator{
 		}
 
 		if(conf_reader.val("time:start"))
-			this.starting_time = new Date(conf_reader.val("time:start")) 
+			this.starting_time = new Date(conf_reader.val("time:start"));
 		else
 			this.starting_time = new Date("1970-01-01T00:00:00");
 
 		if(conf_reader.val("time:end"))
-			this.end_time = new Date(conf_reader.val("time:end"))
+			this.end_time = new Date(conf_reader.val("time:end"));
 		else 
 			this.end_time = new Date("1970-01-01T01:00:00");
 
-		this.time_per_file = conf_reader.val("time:time_per_file") || 3600;
+		this.time_per_file = conf_reader.val("time:time_per_file") || 0;
 		this.time_interval = conf_reader.val("time:interval") || 30;
 
 		this.output_meta_data = conf_reader.val("file:output_meta_data") || false;
-		this.output_dir = conf_reader.val("file:output") || ".";
-		this.file_extension = conf_reader.val("file:extension") || "";
+		this.split_files = conf_reader.val("file:split") || true;
+
+		this.output_files = new Array();
+	}
+
+	setSplitFile(split){
+		this.split_files = split;
+	}
+
+	setStartTime(start, end){
+		this.starting_time = start;
+
+		if(end)
+			this.end_time = end;
+		else{
+			this.end_time = new Date(this.starting_time);
+			this.end_time.setSeconds(this.end_time.getSeconds() + this.time_per_file);
+		}
+	}
+
+	getInfo(){
+		let cities = [];
+		for(var i in this.cities)
+			cities.push(this.cities[i].getInfo());
+		return cities;
 	}
 
 	//Generate the data for one city
@@ -81,9 +86,9 @@ class Generator{
 
 			
 			//If the data for one file is generated, we need to write that file
-			if(next_end_of_file_time.getTime() == time_stamp.getTime()){
+			if(this.split_files && this.time_per_file > 0 && next_end_of_file_time.getTime() == time_stamp.getTime()){
 				this.roundUpFile(city, base_URI, writer);
-				writer.end((function (error, result) { this.outputFile(result, city); }).bind(this));
+				writer.end((function (error, result) { this.saveOutputFile(result, city); }).bind(this));
 				writer = this.initWriter();
 
 				//initiate new file times
@@ -96,8 +101,20 @@ class Generator{
 		}
 
 		this.roundUpFile(city, base_URI, writer);
-		//Write the file
-		writer.end((function (error, result) { this.outputFile(result, city); }).bind(this));
+
+		writer.end((
+			function (error, result) { 
+				this.saveOutputFile(result, city);
+			}
+		).bind(this));
+	}
+
+	saveOutputFile(result, city){
+		this.output_files.push({result,city, file_time: new Date(this.current_file_time)});
+	}
+
+	clearOutputFiles(){
+		this.output_files = new Array();
 	}
 
 	//Adds the static meta data at the end of the file
@@ -110,55 +127,15 @@ class Generator{
 		}
 	}
 
-	//Requests the result of the N3 write and writes it to a file
-	outputFile(result, city){
-		let delim = "\\";
-		if (process.platform === 'linux') {
-			delim = "/";
-		}
-
-		let file_name = this.output_dir + delim;
-		let subdir = '';
-        let format = conf_reader.val("file:name_format") || "DEFAULT";
-        switch (format) {
-			case "DEFAULT": // Default file naming
-                file_name += city.name + "-" + utils.createTimeString(this.current_file_time).replace(new RegExp(":", 'g'), "");
-                break;
-			case "UNIX": // File name is UNIX timestamp of beginning of interval
-				file_name += city.name + delim + this.current_file_time.valueOf()/1000;
-				subdir = this.output_dir + delim + city.name;
-		}
-
-		if (this.file_extension)
-			file_name += this.file_extension;
-
-		fs.writeFile(file_name, result, (err) => {
-		    if(err) {
-		    	if (err.errno === -2 && subdir !== '') {
-		    		// Directory might not exist, try to create it
-					mkdirp(subdir, (err) => {
-						if (err) console.error(err);
-						else {
-							console.log("Created directory ", subdir);
-							fs.writeFile(file_name, result, err => {
-								if (err) return console.error(err);
-							})
-                        }
-					})
-				} else {
-                    return console.error(err);
-                }
-		    }
-
-		    console.log(file_name + " was saved!");
-		}); 
-	}
-
 	//Start generating data for all cities
 	generate(){
+		this.output_files = new Array();
+
 		for(var c in this.cities){
 			this.generateCity(c);
 		}
+
+		return this.output_files;
 	}
 
 	//Write the number of triples in the file
@@ -174,7 +151,8 @@ class Generator{
 	//Initiate a new N3 writer
 	initWriter(){
 		return N3.Writer({ 	format: 'application/trig',
-							prefixes: { 	datex: 'http://vocab.datex.org/terms#',
+							prefixes: { 
+										datex: 'http://vocab.datex.org/terms#',
 										schema: 'http://schema.org/',
 										dct: 'http://purl.org/dc/terms/',
 										geo: 'http://www.w3.org/2003/01/geo/wgs84_pos#',
@@ -331,5 +309,4 @@ class Generator{
 	}
 }
 
-var gen = new Generator();
-gen.generate();
+module.exports = Generator;

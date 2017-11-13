@@ -23,6 +23,11 @@ class Event{
 		///Random starting values for lambda and sigma
 		this.lambda = utils.getRandomNumber(this.min_lambda, this.max_lambda);
 		this.sigma = utils.getRandomNumber(this.min_sigma, this.max_sigma);
+
+		this.last_sl_change = 0;
+
+		this.change_interval = (conf_reader.val("events:change_rate") || 1)/60;
+
 	}
 
 	/*
@@ -37,21 +42,33 @@ class Event{
 
 		let rate = 0;
 
+		//Check if it is time to change the distribution variables
+
 		if(shifted_x >= 0 && shifted_end_x < 0){
-			this.sigma += utils.getRandomNumber(-this.sigma_var, this.sigma_var);
-			this.sigma = this.sigma > this.max_sigma ? this.max_sigma : this.sigma;
-			this.sigma = this.sigma < this.min_sigma ? this.min_sigma : this.sigma;
+			if(this.checkIfTimeToChange(x)){
+				this.sigma += utils.getRandomNumber(-this.sigma_var, this.sigma_var);
+				this.sigma = this.sigma > this.max_sigma ? this.max_sigma : this.sigma;
+				this.sigma = this.sigma < this.min_sigma ? this.min_sigma : this.sigma;
+				this.last_sl_change = x;
+			}
 			rate = rl_cdf(shifted_x, { 'sigma': this.sigma });
 		}
 		else if(shifted_end_x >= 0){
-			this.lambda += utils.getRandomNumber(-this.lambda_var, this.lambda_var);
-			this.lambda = this.lambda > this.max_lambda ? this.max_lambda : this.lambda;
-			this.lambda = this.lambda < this.min_lambda ? this.min_lambda : this.lambda;
+			if(this.checkIfTimeToChange(x)){
+				this.lambda += utils.getRandomNumber(-this.lambda_var, this.lambda_var);
+				this.lambda = this.lambda > this.max_lambda ? this.max_lambda : this.lambda;
+				this.lambda = this.lambda < this.min_lambda ? this.min_lambda : this.lambda;
+				this.last_sl_change = x;
+			}
 			exp.rate(this.lambda);
 			rate = exp.pdf([shifted_end_x])[0] / this.lambda;
 		}
 
 		return rate * this.occupation;
+	}
+
+	checkIfTimeToChange(x){
+		return Math.abs(x - this.last_sl_change) > this.change_interval;
 	}
 }
 

@@ -31,7 +31,7 @@ class Parking{
 		return this.num_spaces - this.occupied_spaces;
 	}
 
-	takeStep(x){
+	takeStep(x, delta){
 		let rate = 0;
 		
 		for(var i = 0; i < this.events.length; i++)
@@ -62,15 +62,23 @@ class City{
 		return 'city' + this.num;
 	}
 
-	takeStep(time, distribution){
+	takeStep(time, delta){
 		var x = time.getHours() + time.getMinutes()/60;
 		for(var i = 0; i < this.num_parkings; i++){
 			this.parkings[i].takeStep(x);
 		}
 	}
+
+
+	getInfo(){
+		let city = {number: this.num, parkings: []};
+		for(var i in this.parkings)
+			city.parkings.push({number: this.parkings[i].num, spaces: this.parkings[i].num_spaces});
+		return city;
+	}
 }
 
-module.exports= {
+module.exports = {
 	City: City,
 	Parking: Parking
 }

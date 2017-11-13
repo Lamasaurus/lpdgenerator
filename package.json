@@ -2,7 +2,7 @@
   "name": "lpdgenerator",
   "version": "1.0.2",
   "description": "Linked parking data generator, generates dumps of parking data in the form of linked data.",
-  "main": "generator.js",
+  "main": "index.js",
   "bin": {
     "lpdgenerator": "event.js"
   },

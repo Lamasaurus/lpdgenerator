@@ -2,7 +2,22 @@
 Linked parking data generator, generates dumps of parking data in the form of linked data.
 
 ## Usage
-node ./bin/generator.js \[input-file\]
+
+```
+const lpdgenerator = require('lpdgenerator');
+
+var generator = new lpdgenerator();
+var output_files = generator.generate();
+```
+
+This output_files is an array with elements of this structure:
+```
+{
+	city // The city number that is described in this file
+	file_time // The time that this file describes
+	result // The linked data
+}
+```
 
 ## Input
 There is an example input file in the root.
@@ -22,6 +37,7 @@ file:output | The output directory | ""
 file:output_meta_data | Bool to see if meta data should be put in the file | false
 file:extension | Defines the extension of the generated files | ""
 file:name_format | Defines the format of the output filenames. `DEFAULT`: `city-YYYY-MM-DDThhmmss`, `UNIX`: UNIX timestamp of beginning of interval. | "DEFAULT"
+file:split | If files of cities should be split, if false will ignore "time:time_per_file" | true
 events:min_events | Minimum number of events within 24h | 0
 events:max_events | Maximum number of events within 24h | 1
 events:min_duration | Minimum duration of the events | 0
